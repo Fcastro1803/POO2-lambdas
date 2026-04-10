@@ -9,6 +9,11 @@ public class Productos {
     private List<Producto> productos;
     private SecuritySubSystem security;
 
+    public Productos(List<Producto> productos, SecuritySubSystem security) {
+        this.productos = productos;
+        this.security = security;
+    }
+
     // Metodo generico para ejecutar operaciones con permisos
     private <T> T ejecutarConPermisos(String userId, Supplier<T> operacion, String mensajeError) {
         if (!this.security.checkPermission(userId)) {
@@ -40,5 +45,13 @@ public class Productos {
                 () -> Collections.unmodifiableList(this.productos),
                 "Error al listar productos"
         );
+    }
+
+    public int cantidad() {
+        return this.productos.size();
+    }
+
+    public boolean contiene(Producto unProducto) {
+        return this.productos.contains(unProducto);
     }
 }
