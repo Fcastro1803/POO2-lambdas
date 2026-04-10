@@ -2,6 +2,7 @@ package oop2.lambdas.permissions2;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Productos {
     public static final String SIN_PERMISOS = "No tiene los permisos necesarios";
@@ -13,25 +14,42 @@ public class Productos {
         this.productos = productos;
     }
 
-    public void addProducto(String userId, Producto producto) {
-        if (!this.security.checkAddPermission(userId)) {
+    // Metodo genérico para operaciones con diferentes permisos
+    private <T> T ejecutarConPermiso(Supplier<Boolean> verificacionPermiso, Supplier<T> operacion, String mensajeError) {
+        if (!verificacionPermiso.get()) {
             throw new RuntimeException(SIN_PERMISOS);
         }
-        this.productos.add(producto);
+        try {
+            return operacion.get();
+        } catch (Exception e) {
+            throw new RuntimeException(mensajeError, e);
+        }
     }
 
-    public void removeProducto(String userId, Producto producto) {
-        if (!this.security.checkRemovePermission(userId)) {
-            throw new RuntimeException(SIN_PERMISOS);
-        }
-        this.productos.remove(producto);
+    public boolean addProducto(String userId, Producto producto) {
+        ejecutarConPermiso(
+                () -> this.security.checkAddPermission(userId),  // Permiso específico para add
+                () -> this.productos.add(producto),
+                "Error al agregar producto"
+        );
+        return false;
+    }
+
+    public boolean removeProducto(String userId, Producto producto) {
+        ejecutarConPermiso(
+                () -> this.security.checkRemovePermission(userId),  // Permiso específico para remove
+                () -> this.productos.remove(producto),
+                "Error al eliminar producto"
+        );
+        return false;
     }
 
     public List<Producto> listAll(String userId) {
-        if (!this.security.checkListPermission(userId)) {
-            throw new RuntimeException(SIN_PERMISOS);
-        }
-        return Collections.unmodifiableList(this.productos);
+        return ejecutarConPermiso(
+                () -> this.security.checkListPermission(userId),  // Permiso específico para list
+                () -> Collections.unmodifiableList(this.productos),
+                "Error al listar productos"
+        );
     }
 
     int cantidad() {
